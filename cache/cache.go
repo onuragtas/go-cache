@@ -100,8 +100,8 @@ func (c *Adapter) MultiSet(serializer *serializer.Serializer, key string, values
 	return c.client.MultiSet(context.TODO(), key, values...).Err()
 }
 
-func (c *Adapter) DeleteHashWithPattern(key, pattern string) {
-	keys := c.client.HScan(context.TODO(), key, 0, pattern, 1000000)
+func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset uint64, count int64) {
+	keys := c.client.HScan(context.TODO(), key, offset, pattern, count)
 	for _, foundKey := range keys {
 		c.client.HDel(context.TODO(), key, foundKey)
 	}
