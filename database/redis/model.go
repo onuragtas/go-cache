@@ -43,17 +43,8 @@ func (c Client) MultiSet(ctx context.Context, key string, values ...interface{})
 	return c.Client.HMSet(ctx, key, values)
 }
 
-func (c Client) HScan(ctx context.Context, key string, cursor uint64, match string, count int64) []string {
-	var keys []string
-	iter := c.Client.HScan(ctx, key, cursor, match, count).Iterator()
-	var i int = 0
-	for iter.Next(ctx) {
-		if i%2 == 0 {
-			keys = append(keys, iter.Val())
-		}
-		i++
-	}
-	return keys
+func (c Client) HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ([]string, uint64, error) {
+	return c.Client.HScan(ctx, key, cursor, match, count).Result()
 }
 
 type IClient interface {
