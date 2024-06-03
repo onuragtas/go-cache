@@ -3,9 +3,10 @@ package cache
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/onuragtas/go-cache/cache/serializer"
 	"github.com/onuragtas/go-cache/database/redis"
-	"time"
 )
 
 func (c *Adapter) Get(serializer serializer.ISerializer, key string) error {
@@ -97,6 +98,13 @@ func (c *Adapter) MultiSet(serializer *serializer.Serializer, key string, values
 	}
 
 	return c.client.MultiSet(context.TODO(), key, values...).Err()
+}
+
+func (c *Adapter) DeleteHashWithPattern(key, pattern string) {
+	keys := c.client.HScan(context.TODO(), key, 0, pattern, 1000000)
+	for _, foundKey := range keys {
+		c.client.HDel(context.TODO(), key, foundKey)
+	}
 }
 
 func NewCacheAdapter(hosts []string) *Adapter {

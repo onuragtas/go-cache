@@ -2,8 +2,9 @@ package redis
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Client struct {
@@ -42,6 +43,19 @@ func (c Client) MultiSet(ctx context.Context, key string, values ...interface{})
 	return c.Client.HMSet(ctx, key, values)
 }
 
+func (c Client) HScan(ctx context.Context, key string, cursor uint64, match string, count int64) []string {
+	var keys []string
+	iter := c.Client.HScan(ctx, key, cursor, match, count).Iterator()
+	var i int = 0
+	for iter.Next(ctx) {
+		if i%2 == 0 {
+			keys = append(keys, iter.Val())
+		}
+		i++
+	}
+	return keys
+}
+
 type IClient interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
@@ -51,4 +65,5 @@ type IClient interface {
 	HDel(ctx context.Context, key string, field ...string) *redis.IntCmd
 	HMGet(ctx context.Context, key string, fields ...string) *redis.SliceCmd
 	HMSet(ctx context.Context, key string, values ...interface{}) *redis.BoolCmd
+	HScan(ctx context.Context, key string, cursor uint64, match string, count int64) *redis.ScanCmd
 }
