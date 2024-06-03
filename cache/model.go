@@ -21,5 +21,5 @@ type IAdapter interface {
 	MultiGet(serialize *serializer.Serializer, key string, fields ...string) (interface{}, error)
 	MultiSet(serialize *serializer.Serializer, key string, values ...interface{}) error
 	HDel(key string, field ...string) error
-	DeleteHashWithPattern(key, pattern string, offset uint64, count int64)
+	DeleteHashWithPattern(key, pattern string, offset uint64, count int64) error
 }
