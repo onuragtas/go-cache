@@ -100,11 +100,23 @@ func (c *Adapter) MultiSet(serializer *serializer.Serializer, key string, values
 	return c.client.MultiSet(context.TODO(), key, values...).Err()
 }
 
-func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset uint64, count int64) {
-	keys := c.client.HScan(context.TODO(), key, offset, pattern, count)
-	for _, foundKey := range keys {
-		c.client.HDel(context.TODO(), key, foundKey)
+func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset uint64, count int64) error {
+	keys, _, err := c.client.HScan(context.TODO(), key, offset, pattern, count)
+	if err != nil {
+		return err
 	}
+	for i, foundKey := range keys {
+		if i%2 != 0 {
+			continue
+		}
+		err = c.client.HDel(context.TODO(), key, foundKey).Err()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func NewCacheAdapter(hosts []string) *Adapter {
