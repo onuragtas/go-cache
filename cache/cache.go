@@ -101,10 +101,35 @@ func (c *Adapter) MultiSet(serializer *serializer.Serializer, key string, values
 }
 
 func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset uint64, count int64) error {
+	if pattern == "" {
+		c.deleteWithScan(key, offset, count)
+	} else {
+		c.deleteWithHash(key, pattern, offset, count)
+	}
+	return nil
+}
+
+func (c *Adapter) deleteWithScan(key string, offset uint64, count int64) error {
+	keys, _, err := c.client.Scan(context.TODO(), offset, key, count)
+	if err != nil {
+		return err
+	}
+
+	for _, foundKey := range keys {
+		err = c.client.Del(context.TODO(), foundKey).Err()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Adapter) deleteWithHash(key, pattern string, offset uint64, count int64) error {
 	keys, _, err := c.client.HScan(context.TODO(), key, offset, pattern, count)
 	if err != nil {
 		return err
 	}
+
 	for i, foundKey := range keys {
 		if i%2 != 0 {
 			continue
@@ -115,7 +140,6 @@ func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset uint64, coun
 			return err
 		}
 	}
-
 	return nil
 }
 
