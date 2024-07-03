@@ -47,6 +47,10 @@ func (c Client) HScan(ctx context.Context, key string, cursor uint64, match stri
 	return c.Client.HScan(ctx, key, cursor, match, count).Result()
 }
 
+func (c Client) Scan(ctx context.Context, cursor uint64, match string, count int64) ([]string, uint64, error) {
+	return c.Client.Scan(ctx, cursor, match, count).Result()
+}
+
 type IClient interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
@@ -57,4 +61,5 @@ type IClient interface {
 	HMGet(ctx context.Context, key string, fields ...string) *redis.SliceCmd
 	HMSet(ctx context.Context, key string, values ...interface{}) *redis.BoolCmd
 	HScan(ctx context.Context, key string, cursor uint64, match string, count int64) *redis.ScanCmd
+	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
 }
