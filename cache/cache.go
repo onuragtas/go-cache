@@ -100,45 +100,67 @@ func (c *Adapter) MultiSet(serializer *serializer.Serializer, key string, values
 	return c.client.MultiSet(context.TODO(), key, values...).Err()
 }
 
-func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset uint64, count int64) error {
+func (c *Adapter) DeleteHashWithPattern(key, pattern string, offset int64, count int64) error {
+	var err error
 	if pattern == "" {
-		c.deleteWithScan(key, offset, count)
+		err = c.deleteWithScan(key, offset, count)
 	} else {
-		c.deleteWithHash(key, pattern, offset, count)
+		err = c.deleteWithHash(key, pattern, offset, count)
 	}
-	return nil
+	return err
 }
 
-func (c *Adapter) deleteWithScan(key string, offset uint64, count int64) error {
-	keys, _, err := c.client.Scan(context.TODO(), offset, key, count)
-	if err != nil {
-		return err
-	}
+func (c *Adapter) deleteWithScan(key string, offset int64, count int64) error {
+	var keys []string
+	cursor := uint64(offset)
 
-	for _, foundKey := range keys {
-		err = c.client.Del(context.TODO(), foundKey).Err()
+	for {
+		list, nextCursor, err := c.client.Scan(context.TODO(), cursor, key, count)
 		if err != nil {
 			return err
 		}
+
+		if len(list) > 0 {
+			keys = append(keys, list...)
+		}
+
+		if nextCursor == 0 {
+			break
+		}
+		cursor = nextCursor
 	}
+
+	if len(keys) != 0 {
+		return c.client.Del(context.TODO(), keys...).Err()
+	}
+
 	return nil
 }
 
-func (c *Adapter) deleteWithHash(key, pattern string, offset uint64, count int64) error {
-	keys, _, err := c.client.HScan(context.TODO(), key, offset, pattern, count)
-	if err != nil {
-		return err
-	}
+func (c *Adapter) deleteWithHash(key, pattern string, offset int64, count int64) error {
+	var keys []string
+	cursor := uint64(offset)
 
-	for i, foundKey := range keys {
-		if i%2 != 0 {
-			continue
-		}
-		err = c.client.HDel(context.TODO(), key, foundKey).Err()
-
+	for {
+		list, nextCursor, err := c.client.HScan(context.TODO(), key, cursor, pattern, count)
 		if err != nil {
 			return err
 		}
+
+		for i, foundKey := range list {
+			if i%2 != 0 {
+				continue
+			}
+			keys = append(keys, foundKey)
+		}
+
+		if nextCursor == 0 {
+			break
+		}
+		cursor = nextCursor
+	}
+	if len(keys) != 0 {
+		return c.client.HDel(context.TODO(), key, keys...).Err()
 	}
 	return nil
 }
