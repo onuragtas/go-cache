@@ -8,8 +8,9 @@ import (
 	"github.com/onuragtas/go-cache/cache/serializer"
 )
 
+var cacheAdapter = cache.NewCacheAdapter([]string{"127.0.0.1:6379"})
+
 func TestSet(t *testing.T) {
-	cacheAdapter := cache.NewCacheAdapter([]string{"192.168.36.240:6379"})
 
 	var value = map[string]interface{}{
 		"key": "value",
@@ -23,9 +24,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestDeleteHashWithPattern(t *testing.T) {
-	cacheAdapter := cache.NewCacheAdapter([]string{"192.168.36.240:6379"})
-
-	cErr := cacheAdapter.DeleteHashWithPattern("comment:{upid}:nc_96638713_*", "*", 0, 1000)
+	cErr := cacheAdapter.DeleteHashWithPattern("*", "", 0, 1000)
 	if cErr != nil {
 		log.Print(cErr)
 	}
